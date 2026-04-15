@@ -11,24 +11,27 @@ async def chat_endpoint(request: ChatRequest):
     """
     Handles streaming chat queries.
     Returns Server-Sent Events (SSE) with metadata first, then content chunks.
+    Each event includes the user_id for client-side correlation.
     """
     stream_generator, confidence = await generate_chat_response(request.message, request.role)
-    
+    user_id = request.user_id
+
     async def sse_generator():
         # 1. Send confidence score and metadata
-        meta_payload = json.dumps({"type": "metadata", "confidence": confidence})
+        meta_payload = json.dumps({"user_id": user_id, "type": "metadata", "confidence": confidence})
         yield f"data: {meta_payload}\n\n"
-        # 2. Generate full response by tracking the stream
+
+        # 2. Generate full response by collecting the stream
         full_content = ""
         async for chunk in stream_generator:
             full_content += chunk
-            
+
         # 3. Yield a single response containing the complete text
-        content_payload = json.dumps({"type": "content", "content": full_content})
+        content_payload = json.dumps({"user_id": user_id, "type": "content", "content": full_content})
         yield f"data: {content_payload}\n\n"
-                
+
         # 4. Final completion event
-        done_payload = json.dumps({"type": "done"})
+        done_payload = json.dumps({"user_id": user_id, "type": "done"})
         yield f"data: {done_payload}\n\n"
 
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
