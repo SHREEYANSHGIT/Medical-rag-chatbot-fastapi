@@ -193,7 +193,7 @@ Set up ChromaDB for:
 #### Environment Variables
 
 ```env
-OPENAI_API_KEY=
+GROQ_API_KEY=
 CHROMA_DB_PATH=
 EMBEDDING_MODEL=
 ```
